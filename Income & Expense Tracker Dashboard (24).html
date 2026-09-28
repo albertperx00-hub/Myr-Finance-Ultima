@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MYR Finance & Commitment Tracker</title>
+    
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        sheets: {
+                            green: '#0F9D58',
+                            darkGreen: '#0B8043',
+                            lightGreen: '#E6F4EA',
+                            grayBg: '#F8F9FA',
+                            border: '#DADCE0'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-sheets-grayBg font-sans text-slate-800 antialiased pb-28">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-sheets-border sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sheets-green text-white p-2.5 rounded-lg shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-file-excel text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">MYR Finance Sheet</h1>
+                    <p class="text-xs text-slate-500">Income, Expenses & Recurring Commitments</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1.5 sm:space-x-2">
+                <button onclick="openExportModal()" title="Export Backup JSON" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+                    <i class="fa-solid fa-download"></i>
+                    <span class="hidden sm:inline">Export</span>
+                </button>
+                <button onclick="triggerImport()" title="Import JSON" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+                    <i class="fa-solid fa-upload"></i>
+                    <span class="hidden sm:inline">Import</span>
+                </button>
+                <input type="file" id="import-file-input" onchange="importData(event)" class="hidden" accept=".json">
+                <button onclick="refreshScreen()" title="Refresh Screen" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span class="hidden sm:inline">Refresh</span>
+                </button>
+            </div>
+        </div>
+        <!-- Tab navigation -->
+        <div class="flex border-t border-sheets-border overflow-x-auto bg-slate-50 px-4">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-2.5 px-4 text-sm font-semibold border-b-2 border-sheets-green text-sheets-green whitespace-nowrap flex items-center space-x-2 transition">
+                <i class="fa-solid fa-chart-pie"></i><span>Dashboard & Charts</span>
+            </button>
+            <button onclick="switchTab('transactions')" id="tab-transactions" class="py-2.5 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap flex items-center space-x-2 transition">
+                <i class="fa-solid fa-list-check"></i><span>Transactions & Commitments</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-5 space-y-5">
+        
+        <!-- Offline & Local File Access Guide Banner -->
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sheets-green text-white p-3 rounded-xl text-xl flex items-center justify-center shadow">
+                    <i class="fa-solid fa-bookmark"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">Saved Locally & Offline Ready</h3>
+                    <p class="text-xs text-slate-600">Your data saves automatically on your phone/PC. Bookmark this file in your browser (<i class="fa-solid fa-star"></i>) to open it instantly anytime!</p>
+                </div>
+            </div>
+            <button onclick="showInstallHelp()" class="bg-sheets-green hover:bg-sheets-darkGreen text-white text-xs font-semibold px-4 py-2 rounded-lg shadow whitespace-nowrap transition">
+                <i class="fa-solid fa-circle-question mr-1"></i> Access Guide
+            </button>
+        </div>
+
+        <div id="view-dashboard" class="space-y-6">
+            <!-- Financial Health Advisor Banner -->
+            <div id="health-advisor-card" class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-center justify-between gap-4 transition-all">
+                <div class="flex items-center space-x-4">
+                    <div id="health-icon" class="bg-white/20 p-3.5 rounded-xl text-3xl flex items-center justify-center backdrop-blur-sm">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-emerald-100 font-semibold">Financial Health Advisor</div>
+                        <div id="health-status-title" class="text-lg sm:text-xl font-bold">Analyzing your cash flow...</div>
+                        <p id="health-status-desc" class="text-xs text-emerald-100 mt-0.5">Your monthly savings rate and commitments are being calculated.</p>
+                    </div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20 text-center md:text-right w-full md:w-auto">
+                    <div class="text-[10px] uppercase text-emerald-200 font-semibold">Savings Ratio</div>
+                    <div id="health-ratio" class="text-lg font-bold">0.0%</div>
+                </div>
+            </div>
+
+            <!-- Summary KPI Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-xl border border-sheets-border shadow-sm">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                        Total Income <i class="fa-solid fa-arrow-trend-up text-emerald-600"></i>
+                    </div>
+                    <div id="kpi-income" class="text-lg sm:text-2xl font-bold text-emerald-600 mt-2">RM 0.00</div>
+                    <div class="text-[11px] text-slate-400 mt-1">All recorded earnings</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-sheets-border shadow-sm">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                        Total Expenses <i class="fa-solid fa-arrow-trend-down text-rose-600"></i>
+                    </div>
+                    <div id="kpi-expense" class="text-lg sm:text-2xl font-bold text-rose-600 mt-2">RM 0.00</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Daily & commitment spend</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-sheets-border shadow-sm">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                        Net Balance <i class="fa-solid fa-wallet text-blue-600"></i>
+                    </div>
+                    <div id="kpi-balance" class="text-lg sm:text-2xl font-bold text-slate-800 mt-2">RM 0.00</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Income minus expenses</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-sheets-border shadow-sm">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                        Pending Bills <i class="fa-solid fa-clock text-amber-600"></i>
+                    </div>
+                    <div id="kpi-pending" class="text-lg sm:text-2xl font-bold text-amber-600 mt-2">RM 0.00</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Unpaid monthly commitments</div>
+                </div>
+            </div>
+
+            <!-- Filter Toolbar -->
+            <div class="bg-white p-4 rounded-xl border border-sheets-border shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <span class="text-xs font-bold uppercase text-slate-500">Period:</span>
+                    <select id="filter-period" onchange="updateDashboard()" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2 focus:ring-sheets-green focus:border-sheets-green w-full sm:w-auto">
+                        <option value="all">All Time</option>
+                        <option value="daily">Daily View (Today)</option>
+                        <option value="monthly" selected>Monthly View (Current Month)</option>
+                        <option value="yearly">Yearly View (Current Year)</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                    <button onclick="openModal('transaction')" class="bg-sheets-green hover:bg-sheets-darkGreen text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg shadow transition flex items-center space-x-2 w-full sm:w-auto justify-center">
+                        <i class="fa-solid fa-plus"></i><span>Add Transaction</span>
+                    </button>
+                    <button onclick="openModal('commitment')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg shadow transition flex items-center space-x-2 w-full sm:w-auto justify-center">
+                        <i class="fa-solid fa-calendar-days"></i><span>Add Commitment</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <!-- Expense Breakdown Pie Chart -->
+                <div class="bg-white p-5 rounded-xl border border-sheets-border shadow-sm flex flex-col items-center justify-center">
+                    <div class="w-full flex items-center justify-between mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-pie text-sheets-green"></i>
+                            <span>Expense Breakdown</span>
+                        </h2>
+                        <span class="text-xs text-slate-400">By Category</span>
+                    </div>
+                    <div class="relative w-full h-64 flex items-center justify-center">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Income vs Expense Bar Chart -->
+                <div class="bg-white p-5 rounded-xl border border-sheets-border shadow-sm flex flex-col items-center justify-center">
+                    <div class="w-full flex items-center justify-between mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-column text-blue-600"></i>
+                            <span>Cash Flow Comparison</span>
+                        </h2>
+                        <span class="text-xs text-slate-400">Income vs Spend</span>
+                    </div>
+                    <div class="relative w-full h-64 flex items-center justify-center">
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Tables / Widgets -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <!-- Monthly Commitment Status Widget -->
+                <div class="bg-white p-5 rounded-xl border border-sheets-border shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-file-invoice-dollar text-sheets-green"></i>
+                            <span>Recurring Commitments Status</span>
+                        </h2>
+                        <span id="commitment-summary-badge" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-800">0 Paid / 0 Unpaid</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-72">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-xs text-slate-600 uppercase sticky top-0">
+                                <tr>
+                                    <th class="p-2.5">Commitment</th>
+                                    <th class="p-2.5">Amount</th>
+                                    <th class="p-2.5">Status</th>
+                                    <th class="p-2.5 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-commitments-list" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions Widget -->
+                <div class="bg-white p-5 rounded-xl border border-sheets-border shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>
+                            <span>Recent Income & Expenses</span>
+                        </h2>
+                        <button onclick="switchTab('transactions')" class="text-xs text-sheets-green font-semibold hover:underline">View All</button>
+                    </div>
+                    <div class="overflow-x-auto max-h-72">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-xs text-slate-600 uppercase sticky top-0">
+                                <tr>
+                                    <th class="p-2.5">Date</th>
+                                    <th class="p-2.5">Title</th>
+                                    <th class="p-2.5 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-transactions-list" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-transactions" class="hidden space-y-6">
+            <!-- Recurring Commitments Management -->
+            <div class="bg-white p-5 rounded-xl border border-sheets-border shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-calendar-days text-blue-600"></i>
+                            <span>Monthly Recurring Commitments & Tenure</span>
+                        </h2>
+                        <p class="text-xs text-slate-500">Track monthly bills and loan tenures (e.g., 18/60 months).</p>
+                    </div>
+                    <button onclick="openModal('commitment')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i><span>Add Commitment</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-xs text-slate-600 uppercase border-b">
+                            <tr>
+                                <th class="p-3">Title</th>
+                                <th class="p-3">Category</th>
+                                <th class="p-3">Amount</th>
+                                <th class="p-3">Due Date</th>
+                                <th class="p-3">Tenure / Progress</th>
+                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-commitments-table" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- All Transactions -->
+            <div class="bg-white p-5 rounded-xl border border-sheets-border shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-receipt text-sheets-green"></i>
+                            <span>Income & Expense Transactions</span>
+                        </h2>
+                        <p class="text-xs text-slate-500">Complete log of all your recorded money flows.</p>
+                    </div>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <input type="text" id="search-tx" oninput="renderTransactionsTable()" placeholder="Search transactions..." class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-lg p-2 focus:ring-sheets-green focus:border-sheets-green w-full sm:w-64">
+                        <button onclick="openModal('transaction')" class="bg-sheets-green hover:bg-sheets-darkGreen text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition flex items-center space-x-1.5 whitespace-nowrap">
+                            <i class="fa-solid fa-plus"></i><span>Add</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-xs text-slate-600 uppercase border-b">
+                            <tr>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Type</th>
+                                <th class="p-3">Title</th>
+                                <th class="p-3">Category</th>
+                                <th class="p-3 text-right">Amount</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-transactions-table" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Transaction Modal -->
+    <div id="modal-transaction" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 id="modal-tx-title" class="font-bold text-base text-slate-900">Add Income / Expense</h3>
+                <button onclick="closeModal('transaction')" class="text-slate-400 hover:text-slate-700 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-transaction" onsubmit="saveTransaction(event)" class="space-y-4">
+                <input type="hidden" id="tx-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Type</label>
+                    <select id="tx-type" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium">
+                        <option value="expense">Expense (-)</option>
+                        <option value="income">Income (+)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Title / Description</label>
+                    <input type="text" id="tx-name" required placeholder="e.g. Groceries at Aeon, Salary" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Amount (MYR)</label>
+                        <input type="number" step="0.01" id="tx-amount" required placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Date</label>
+                        <input type="date" id="tx-date" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Category</label>
+                    <select id="tx-category" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                        <option value="Food & Dining">Food & Dining</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Salary">Salary</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Loan & Debt">Loan & Debt</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('transaction')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-sheets-green hover:bg-sheets-darkGreen text-white text-sm font-semibold px-5 py-2 rounded-lg shadow">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Commitment Modal with Tenure Support -->
+    <div id="modal-commitment" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 id="modal-comm-title" class="font-bold text-base text-slate-900">Add Monthly Commitment</h3>
+                <button onclick="closeModal('commitment')" class="text-slate-400 hover:text-slate-700 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-commitment" onsubmit="saveCommitment(event)" class="space-y-4">
+                <input type="hidden" id="comm-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Commitment Name</label>
+                    <input type="text" id="comm-name" required placeholder="e.g. Car Loan, Rent" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Amount (MYR)</label>
+                        <input type="number" step="0.01" id="comm-amount" required placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Due Day of Month</label>
+                        <input type="number" min="1" max="31" id="comm-duedate" required placeholder="1-31" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Current Tenure (e.g. 18)</label>
+                        <input type="number" min="0" id="comm-current-tenure" placeholder="e.g. 18" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Total Tenure (e.g. 60)</label>
+                        <input type="number" min="0" id="comm-total-tenure" placeholder="e.g. 60" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Category</label>
+                    <select id="comm-category" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                        <option value="Loan & Debt">Loan & Debt</option>
+                        <option value="Housing & Rent">Housing & Rent</option>
+                        <option value="Utilities & Bills">Utilities & Bills</option>
+                        <option value="Subscriptions">Subscriptions</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Initial Status</label>
+                    <select id="comm-status" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                        <option value="unpaid">Unpaid</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('commitment')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow">Save Commitment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export Custom Filename Modal -->
+    <div id="modal-export" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="font-bold text-base text-slate-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-download text-sheets-green"></i>
+                    <span>Export Backup File</span>
+                </h3>
+                <button onclick="closeModal('export')" class="text-slate-400 hover:text-slate-700 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Filename</label>
+                <div class="flex items-center space-x-1">
+                    <input type="text" id="export-filename" value="myr_finance_backup" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                    <span class="text-xs text-slate-400 font-medium">.json</span>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-3 border-t">
+                <button type="button" onclick="closeModal('export')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold px-4 py-2 rounded-lg">Cancel</button>
+                <button type="button" onclick="confirmExportData()" class="bg-sheets-green hover:bg-sheets-darkGreen text-white text-sm font-semibold px-5 py-2 rounded-lg shadow">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Guide Modal -->
+    <div id="modal-install" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="font-bold text-base text-slate-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-bookmark text-sheets-green"></i>
+                    <span>How to Access Offline Anytime</span>
+                </h3>
+                <button onclick="closeModal('install')" class="text-slate-400 hover:text-slate-700 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 text-xs text-slate-700">
+                <div class="bg-slate-50 p-3 rounded-xl border">
+                    <div class="font-bold text-slate-900 mb-1"><i class="fa-solid fa-star text-amber-500 mr-1"></i> Bookmark in Chrome / Safari:</div>
+                    1. Save this HTML file on your phone or PC.<br>
+                    2. Open it in your mobile browser (Chrome/Safari).<br>
+                    3. Tap the browser menu (<i class="fa-solid fa-ellipsis-vertical"></i>) and tap <b class="text-slate-900">"Bookmark"</b> (<i class="fa-solid fa-star"></i>).<br>
+                    4. Open your browser Bookmarks anytime to access your finance sheet instantly offline!
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border">
+                    <div class="font-bold text-slate-900 mb-1"><i class="fa-solid fa-shield-halved text-sheets-green mr-1"></i> Safe Data Storage:</div>
+                    Your records are saved automatically in your browser's local storage. Click <b>Export</b> to download backup JSON files whenever you want extra peace of mind.
+                </div>
+            </div>
+            <div class="pt-2 border-t">
+                <button type="button" onclick="closeModal('install')" class="bg-sheets-green text-white text-xs font-semibold px-5 py-2.5 rounded-lg w-full">Got It!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- General Message Modal -->
+    <div id="modal-message" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 text-center">
+            <div id="msg-icon" class="text-3xl text-sheets-green"><i class="fa-solid fa-circle-check"></i></div>
+            <h3 id="msg-title" class="font-bold text-base text-slate-900">Notice</h3>
+            <p id="msg-text" class="text-xs text-slate-600">Message content here.</p>
+            <div class="pt-2 border-t">
+                <button type="button" onclick="closeModal('message')" class="bg-sheets-green text-white text-xs font-semibold px-5 py-2 rounded-lg w-full">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let appData = {
+            transactions: [
+                { id: '1', type: 'income', name: 'Monthly Salary', amount: 5500.00, date: new Date().toISOString().split('T')[0], category: 'Salary' },
+                { id: '2', type: 'expense', name: 'Grocery Shopping', amount: 250.50, date: new Date().toISOString().split('T')[0], category: 'Food & Dining' },
+                { id: '3', type: 'expense', name: 'GrabCar Ride', amount: 28.00, date: new Date().toISOString().split('T')[0], category: 'Transport' }
+            ],
+            commitments: [
+                { id: 'c1', name: 'Car Loan (AM Bank)', amount: 650.00, dueDate: 28, currentTenure: 18, totalTenure: 60, category: 'Loan & Debt', paid: true },
+                { id: 'c2', name: 'Home Rent', amount: 1500.00, dueDate: 1, currentTenure: 0, totalTenure: 0, category: 'Housing & Rent', paid: false },
+                { id: 'c3', name: 'Unifi Internet', amount: 139.00, dueDate: 15, currentTenure: 0, totalTenure: 0, category: 'Utilities & Bills', paid: true },
+                { id: 'c4', name: 'Netflix Subscription', amount: 55.00, dueDate: 10, currentTenure: 0, totalTenure: 0, category: 'Subscriptions', paid: false }
+            ]
+        };
+
+        let expenseChartInstance = null;
+        let cashFlowChartInstance = null;
+
+        function loadData() {
+            const saved = localStorage.getItem('myr_finance_tracker_ultimate_v12');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.transactions) {
+                        appData = parsed;
+                    }
+                } catch(e) { console.error('Error loading data', e); }
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('myr_finance_tracker_ultimate_v12', JSON.stringify(appData));
+            updateDashboard();
+        }
+
+        function formatMYR(amount) {
+            return 'RM ' + Number(amount).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function showMessage(title, text, isError = false) {
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-text').innerText = text;
+            const iconEl = document.getElementById('msg-icon');
+            if (isError) {
+                iconEl.className = 'text-3xl text-rose-600';
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                iconEl.className = 'text-3xl text-sheets-green';
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            }
+            document.getElementById('modal-message').classList.remove('hidden');
+        }
+
+        function showInstallHelp() {
+            document.getElementById('modal-install').classList.remove('hidden');
+        }
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            ['dashboard', 'transactions'].forEach(t => {
+                const viewEl = document.getElementById('view-' + t);
+                const tabEl = document.getElementById('tab-' + t);
+                if (viewEl) viewEl.classList.add('hidden');
+                if (tabEl) {
+                    tabEl.classList.remove('border-sheets-green', 'text-sheets-green');
+                    tabEl.classList.add('border-transparent', 'text-slate-600');
+                }
+            });
+            const activeView = document.getElementById('view-' + tabId);
+            const activeTab = document.getElementById('tab-' + tabId);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeTab) {
+                activeTab.classList.remove('border-transparent', 'text-slate-600');
+                activeTab.classList.add('border-sheets-green', 'text-sheets-green');
+            }
+
+            if (tabId === 'transactions') {
+                renderFullCommitmentsTable();
+                renderTransactionsTable();
+            } else if (tabId === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Modal Controls
+        function openModal(type, id = null) {
+            if (type === 'transaction') {
+                document.getElementById('form-transaction').reset();
+                document.getElementById('tx-id').value = '';
+                document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('modal-tx-title').innerText = 'Add Income / Expense';
+                if (id) {
+                    const tx = appData.transactions.find(t => t.id === id);
+                    if (tx) {
+                        document.getElementById('tx-id').value = tx.id;
+                        document.getElementById('tx-type').value = tx.type;
+                        document.getElementById('tx-name').value = tx.name;
+                        document.getElementById('tx-amount').value = tx.amount;
+                        document.getElementById('tx-date').value = tx.date;
+                        document.getElementById('tx-category').value = tx.category;
+                        document.getElementById('modal-tx-title').innerText = 'Edit Transaction';
+                    }
+                }
+                document.getElementById('modal-transaction').classList.remove('hidden');
+            } else if (type === 'commitment') {
+                document.getElementById('form-commitment').reset();
+                document.getElementById('comm-id').value = '';
+                document.getElementById('comm-current-tenure').value = '';
+                document.getElementById('comm-total-tenure').value = '';
+                document.getElementById('modal-comm-title').innerText = 'Add Monthly Commitment';
+                if (id) {
+                    const c = appData.commitments.find(item => item.id === id);
+                    if (c) {
+                        document.getElementById('comm-id').value = c.id;
+                        document.getElementById('comm-name').value = c.name;
+                        document.getElementById('comm-amount').value = c.amount;
+                        document.getElementById('comm-duedate').value = c.dueDate;
+                        document.getElementById('comm-current-tenure').value = c.currentTenure !== undefined ? c.currentTenure : '';
+                        document.getElementById('comm-total-tenure').value = c.totalTenure !== undefined ? c.totalTenure : '';
+                        document.getElementById('comm-category').value = c.category;
+                        document.getElementById('comm-status').value = c.paid ? 'paid' : 'unpaid';
+                        document.getElementById('modal-comm-title').innerText = 'Edit Commitment';
+                    }
+                }
+                document.getElementById('modal-commitment').classList.remove('hidden');
+            } else if (type === 'export') {
+                const defaultName = 'myr_finance_backup_' + new Date().toISOString().split('T')[0];
+                const nameInput = document.getElementById('export-filename');
+                if (nameInput) nameInput.value = defaultName;
+                document.getElementById('modal-export').classList.remove('hidden');
+            }
+        }
+
+        function closeModal(type) {
+            const modal = document.getElementById('modal-' + type);
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openExportModal() {
+            openModal('export');
+        }
+
+        // Save Transaction
+        function saveTransaction(e) {
+            e.preventDefault();
+            const id = document.getElementById('tx-id').value;
+            const txData = {
+                id: id || Date.now().toString(),
+                type: document.getElementById('tx-type').value,
+                name: document.getElementById('tx-name').value,
+                amount: parseFloat(document.getElementById('tx-amount').value),
+                date: document.getElementById('tx-date').value,
+                category: document.getElementById('tx-category').value
+            };
+
+            if (id) {
+                const index = appData.transactions.findIndex(t => t.id === id);
+                if (index !== -1) appData.transactions[index] = txData;
+            } else {
+                appData.transactions.unshift(txData);
+            }
+
+            saveData();
+            closeModal('transaction');
+            renderTransactionsTable();
+        }
+
+        function deleteTransaction(id) {
+            appData.transactions = appData.transactions.filter(t => t.id !== id);
+            saveData();
+            renderTransactionsTable();
+        }
+
+        // Save Commitment
+        function saveCommitment(e) {
+            e.preventDefault();
+            const id = document.getElementById('comm-id').value;
+            const currentTenureVal = document.getElementById('comm-current-tenure').value;
+            const totalTenureVal = document.getElementById('comm-total-tenure').value;
+
+            const commData = {
+                id: id || 'c_' + Date.now(),
+                name: document.getElementById('comm-name').value,
+                amount: parseFloat(document.getElementById('comm-amount').value),
+                dueDate: parseInt(document.getElementById('comm-duedate').value),
+                currentTenure: currentTenureVal !== '' ? parseInt(currentTenureVal) : 0,
+                totalTenure: totalTenureVal !== '' ? parseInt(totalTenureVal) : 0,
+                category: document.getElementById('comm-category').value,
+                paid: document.getElementById('comm-status').value === 'paid'
+            };
+
+            if (id) {
+                const index = appData.commitments.findIndex(c => c.id === id);
+                if (index !== -1) appData.commitments[index] = commData;
+            } else {
+                appData.commitments.push(commData);
+            }
+
+            saveData();
+            closeModal('commitment');
+            renderFullCommitmentsTable();
+        }
+
+        function toggleCommitmentPaid(id) {
+            const comm = appData.commitments.find(c => c.id === id);
+            if (comm) {
+                comm.paid = !comm.paid;
+                saveData();
+                updateDashboard();
+                renderFullCommitmentsTable();
+            }
+        }
+
+        function deleteCommitment(id) {
+            appData.commitments = appData.commitments.filter(c => c.id !== id);
+            saveData();
+            renderFullCommitmentsTable();
+        }
+
+        // Period Filtering
+        function filterByPeriod(items, dateKey, period) {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            if (period === 'all') return items;
+            return items.filter(item => {
+                const d = new Date(item[dateKey]);
+                if (period === 'daily') {
+                    return item[dateKey] === todayStr;
+                } else if (period === 'monthly') {
+                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                } else if (period === 'yearly') {
+                    return d.getFullYear() === currentYear;
+                }
+                return true;
+            });
+        }
+
+        // Financial Health Advisor
+        function updateFinancialHealth(totalIncome, totalExpense, netBalance) {
+            const cardEl = document.getElementById('health-advisor-card');
+            const iconEl = document.getElementById('health-icon');
+            const titleEl = document.getElementById('health-status-title');
+            const descEl = document.getElementById('health-status-desc');
+            const ratioEl = document.getElementById('health-ratio');
+
+            let savingsRatio = totalIncome > 0 ? (netBalance / totalIncome) * 100 : 0;
+            ratioEl.innerText = savingsRatio.toFixed(1) + '%';
+
+            if (totalIncome === 0 && totalExpense === 0) {
+                cardEl.className = 'bg-gradient-to-r from-slate-600 to-slate-700 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-center justify-between gap-4 transition-all';
+                iconEl.innerHTML = '<i class="fa-solid fa-calculator"></i>';
+                titleEl.innerText = 'Getting Started 📝';
+                descEl.innerText = 'Log your income and expenses to unlock real-time financial health diagnostics!';
+                return;
+            }
+
+            if (netBalance < 0) {
+                cardEl.className = 'bg-gradient-to-r from-rose-600 to-red-700 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-center justify-between gap-4 transition-all animate-pulse';
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                titleEl.innerText = 'Danger Zone! 🚨';
+                descEl.innerText = `You are spending ${formatMYR(Math.abs(netBalance))} more than you earn this period! Cut down on non-essential purchases immediately.`;
+            } else if (savingsRatio < 15) {
+                cardEl.className = 'bg-gradient-to-r from-amber-600 to-orange-700 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-center justify-between gap-4 transition-all';
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                titleEl.innerText = 'Tight Spot Zone ⚠️';
+                descEl.innerText = `Your savings rate is ${savingsRatio.toFixed(1)}%. You're surviving, but watch out for upcoming recurring bills!`;
+            } else if (savingsRatio >= 15 && savingsRatio < 40) {
+                cardEl.className = 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-center justify-between gap-4 transition-all';
+                iconEl.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
+                titleEl.innerText = 'Safe & Sound Zone 🛡️';
+                descEl.innerText = `Great job! You are retaining ${savingsRatio.toFixed(1)}% of your income. Your financial cushion is growing nicely.`;
+            } else {
+                cardEl.className = 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-center justify-between gap-4 transition-all';
+                iconEl.innerHTML = '<i class="fa-solid fa-rocket"></i>';
+                titleEl.innerText = 'Thriving & Wealthy Zone 🚀';
+                descEl.innerText = `Incredible! A ${savingsRatio.toFixed(1)}% savings rate puts you in top financial shape. Time to invest or treat yourself responsibly!`;
+            }
+        }
+
+        // Update Dashboard
+        function updateDashboard() {
+            const period = document.getElementById('filter-period').value;
+            const filteredTx = filterByPeriod(appData.transactions, 'date', period);
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const expenseCategories = {};
+
+            filteredTx.forEach(tx => {
+                if (tx.type === 'income') {
+                    totalIncome += tx.amount;
+                } else {
+                    totalExpense += tx.amount;
+                    expenseCategories[tx.category] = (expenseCategories[tx.category] || 0) + tx.amount;
+                }
+            });
+
+            let totalCommitments = 0;
+            let pendingCommitmentsAmount = 0;
+            let paidCount = 0;
+            let unpaidCount = 0;
+
+            appData.commitments.forEach(c => {
+                totalCommitments += c.amount;
+                if (c.paid) {
+                    paidCount++;
+                } else {
+                    unpaidCount++;
+                    pendingCommitmentsAmount += c.amount;
+                }
+            });
+
+            if (period === 'monthly' || period === 'all') {
+                totalExpense += totalCommitments;
+                appData.commitments.forEach(c => {
+                    expenseCategories['Commitment: ' + c.category] = (expenseCategories['Commitment: ' + c.category] || 0) + c.amount;
+                });
+            }
+
+            const netBalance = totalIncome - totalExpense;
+
+            document.getElementById('kpi-income').innerText = formatMYR(totalIncome);
+            document.getElementById('kpi-expense').innerText = formatMYR(totalExpense);
+            const balanceEl = document.getElementById('kpi-balance');
+            if (balanceEl) {
+                balanceEl.innerText = formatMYR(netBalance);
+                balanceEl.className = netBalance >= 0 ? 'text-lg sm:text-2xl font-bold text-emerald-600 mt-2' : 'text-lg sm:text-2xl font-bold text-rose-600 mt-2';
+            }
+            document.getElementById('kpi-pending').innerText = formatMYR(pendingCommitmentsAmount);
+
+            const badgeEl = document.getElementById('commitment-summary-badge');
+            if (badgeEl) badgeEl.innerText = `${paidCount} Paid / ${unpaidCount} Unpaid`;
+
+            updateFinancialHealth(totalIncome, totalExpense, netBalance);
+            renderCharts(expenseCategories, totalIncome, totalExpense);
+
+            // Dashboard Commitments Widget
+            const commListEl = document.getElementById('dashboard-commitments-list');
+            if (commListEl) {
+                commListEl.innerHTML = '';
+                if (appData.commitments.length === 0) {
+                    commListEl.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-xs text-slate-400">No commitments added yet</td></tr>`;
+                } else {
+                    appData.commitments.forEach(c => {
+                        commListEl.innerHTML += `
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="p-2.5 font-medium text-slate-800 text-xs sm:text-sm">
+                                    ${c.name}
+                                    <div class="text-[10px] text-slate-400">Due: ${c.dueDate}th</div>
+                                </td>
+                                <td class="p-2.5 text-xs sm:text-sm font-semibold">${formatMYR(c.amount)}</td>
+                                <td class="p-2.5">
+                                    <button onclick="toggleCommitmentPaid('${c.id}')" class="px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center space-x-1 ${c.paid ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'}">
+                                        <i class="fa-solid ${c.paid ? 'fa-check' : 'fa-clock'}"></i>
+                                        <span>${c.paid ? 'Paid' : 'Unpaid'}</span>
+                                    </button>
+                                </td>
+                                <td class="p-2.5 text-right">
+                                    <button onclick="openModal('commitment', '${c.id}')" class="text-slate-400 hover:text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+
+            // Dashboard Transactions Widget
+            const txListEl = document.getElementById('dashboard-transactions-list');
+            if (txListEl) {
+                txListEl.innerHTML = '';
+                const recentTx = [...filteredTx].slice(0, 5);
+                if (recentTx.length === 0) {
+                    txListEl.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-xs text-slate-400">No transactions for this period</td></tr>`;
+                } else {
+                    recentTx.forEach(tx => {
+                        const isInc = tx.type === 'income';
+                        txListEl.innerHTML += `
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="p-2.5 text-xs text-slate-500">${tx.date}</td>
+                                <td class="p-2.5 font-medium text-slate-800 text-xs sm:text-sm">${tx.name}</td>
+                                <td class="p-2.5 text-right font-bold text-xs sm:text-sm ${isInc ? 'text-emerald-600' : 'text-slate-800'}">
+                                    ${isInc ? '+' : '-'}${formatMYR(tx.amount)}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+        }
+
+        // Render Charts
+        function renderCharts(expenseCategories, totalIncome, totalExpense) {
+            const catLabels = Object.keys(expenseCategories);
+            const catValues = Object.values(expenseCategories);
+            const palette = ['#0F9D58', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#6366F1'];
+
+            const canvasPie = document.getElementById('expenseChart');
+            if (canvasPie) {
+                const ctxPie = canvasPie.getContext('2d');
+                if (expenseChartInstance) expenseChartInstance.destroy();
+
+                expenseChartInstance = new Chart(ctxPie, {
+                    type: 'pie',
+                    data: {
+                        labels: catLabels.length > 0 ? catLabels : ['No Expenses'],
+                        datasets: [{
+                            data: catValues.length > 0 ? catValues : [1],
+                            backgroundColor: catLabels.length > 0 ? palette.slice(0, catLabels.length) : ['#e2e8f0']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            const canvasBar = document.getElementById('cashFlowChart');
+            if (canvasBar) {
+                const ctxBar = canvasBar.getContext('2d');
+                if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+
+                cashFlowChartInstance = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Income', 'Expenses'],
+                        datasets: [{
+                            label: 'Amount (RM)',
+                            data: [totalIncome, totalExpense],
+                            backgroundColor: ['#0F9D58', '#EF4444'],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Transactions Table
+        function renderTransactionsTable() {
+            const queryEl = document.getElementById('search-tx');
+            const query = queryEl ? (queryEl.value || '').toLowerCase() : '';
+            const tbody = document.getElementById('full-transactions-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const filtered = appData.transactions.filter(tx => 
+                tx.name.toLowerCase().includes(query) || tx.category.toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-sm text-slate-400">No transactions found</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(tx => {
+                const isInc = tx.type === 'income';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 text-xs text-slate-600">${tx.date}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${isInc ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                ${tx.type.toUpperCase()}
+                            </span>
+                        </td>
+                        <td class="p-3 font-semibold text-slate-800 text-sm">${tx.name}</td>
+                        <td class="p-3 text-xs text-slate-500"><span class="bg-slate-100 px-2.5 py-1 rounded-md">${tx.category}</span></td>
+                        <td class="p-3 text-right font-bold text-sm ${isInc ? 'text-emerald-600' : 'text-slate-800'}">
+                            ${isInc ? '+' : '-'}${formatMYR(tx.amount)}
+                        </td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openModal('transaction', '${tx.id}')" class="text-slate-400 hover:text-blue-600 p-1.5"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-600 p-1.5"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Commitments Table with Tenure Progress
+        function renderFullCommitmentsTable() {
+            const tbody = document.getElementById('full-commitments-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (appData.commitments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-sm text-slate-400">No recurring commitments added yet</td></tr>`;
+                return;
+            }
+
+            appData.commitments.forEach(c => {
+                const tenureDisplay = (c.totalTenure && c.totalTenure > 0) 
+                    ? `<span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-bold">${c.currentTenure || 0} / ${c.totalTenure} mos</span>` 
+                    : `<span class="text-slate-400 text-xs">Ongoing</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-slate-800 text-sm">${c.name}</td>
+                        <td class="p-3 text-xs text-slate-600"><span class="bg-slate-100 px-2.5 py-1 rounded-md">${c.category}</span></td>
+                        <td class="p-3 font-semibold text-sm">${formatMYR(c.amount)}</td>
+                        <td class="p-3 text-xs text-slate-600">Day ${c.dueDate} of month</td>
+                        <td class="p-3">${tenureDisplay}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="toggleCommitmentPaid('${c.id}')" class="px-3 py-1.5 rounded-full text-xs font-bold transition inline-flex items-center space-x-1.5 ${c.paid ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'}">
+                                <i class="fa-solid ${c.paid ? 'fa-check-circle' : 'fa-clock'}"></i>
+                                <span>${c.paid ? 'Paid' : 'Mark as Paid'}</span>
+                            </button>
+                        </td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openModal('commitment', '${c.id}')" class="text-slate-400 hover:text-blue-600 p-1.5"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteCommitment('${c.id}')" class="text-slate-400 hover:text-rose-600 p-1.5"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Export and Import Backup JSON
+        function confirmExportData() {
+            const nameInput = document.getElementById('export-filename');
+            let customName = nameInput ? nameInput.value.trim() : 'myr_finance_backup';
+            if (!customName) customName = 'myr_finance_backup';
+            if (!customName.endsWith('.json')) {
+                customName += '.json';
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", customName);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            closeModal('export');
+        }
+
+        function triggerImport() {
+            const fileInput = document.getElementById('import-file-input');
+            fileInput.value = '';
+            fileInput.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && Array.isArray(imported.transactions)) {
+                        appData = imported;
+                        if (!appData.commitments) appData.commitments = [];
+                        saveData();
+                        switchTab('dashboard');
+                        showMessage('Success', 'Your financial data was imported successfully!');
+                    } else {
+                        showMessage('Invalid Format', 'The uploaded file does not contain valid finance sheet backup structure.', true);
+                    }
+                } catch(err) {
+                    console.error("Invalid backup file", err);
+                    showMessage('Import Error', 'Could not parse the selected JSON file. Please ensure it is a valid backup.', true);
+                }
+            };
+            reader.onerror = function() {
+                showMessage('Import Error', 'Failed to read the selected file.', true);
+            };
+            reader.readAsText(file);
+        }
+
+        function refreshScreen() {
+            loadData();
+            updateDashboard();
+            renderTransactionsTable();
+            renderFullCommitmentsTable();
+            showMessage('Refreshed', 'Screen updated with your latest saved data.');
+        }
+
+        window.onload = function() {
+            loadData();
+            updateDashboard();
+        };
+    </script>
+</body>
+</html>
